@@ -67,7 +67,7 @@ function SiteFooter() {
         </div>
 
         <div className="mt-16 border-t border-white/15 pt-6 text-[13px] leading-5 text-white/65">
-          <p>© 2026 VaultX Pay.</p>
+          <p>© 2026 VaultX Pay. Portfolio project, not a real bank. No real money moves, so please do not enter real card details.</p>
           <p className="mt-3">
             Photos:{' '}
             {credits.map((c, i) => (

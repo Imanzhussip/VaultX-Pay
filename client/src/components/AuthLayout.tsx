@@ -11,6 +11,7 @@ function AuthLayout({ title, subline, children, footer }: { title: string; subli
           <p className="mt-1 text-muted">{subline}</p>
           <div className="panel mt-6 p-6">{children}</div>
           <p className="mt-4 text-muted">{footer}</p>
+          <p className="mt-6 text-[12px] leading-4 text-muted">Portfolio project, not a real bank. No real money moves, so please do not use real card details or a password you use elsewhere.</p>
         </main>
       </div>
       <aside className="sticky top-0 hidden h-screen flex-col justify-between overflow-hidden bg-primary p-12 text-white lg:flex" aria-label="About VaultX Pay">

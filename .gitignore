@@ -144,3 +144,5 @@ vite.config.ts.timestamp-*
 
 .env
 .taste-skill/
+.impeccable/review/
+*.code-workspace
