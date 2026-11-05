@@ -2,7 +2,7 @@
 
 A simple online payments app. You can hold a balance in Hong Kong dollars, add money from a card, send money to friends by email, and see every movement on your account.
 
-**Live demo:** (WRITE YOUR LINK IMAN)
+**Live demo:** https://vaultx-pay.vercel.app/
 
 > This is a portfolio project, not a real bank. No real money moves, so please don't enter real card details or passwords you use elsewhere.
 
