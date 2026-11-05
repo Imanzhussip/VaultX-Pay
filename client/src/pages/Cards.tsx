@@ -1,191 +1,178 @@
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState } from 'react';
 import api from '../api/axios';
+import CardFace from '../components/CardFace';
+import ErrorNote from '../components/ErrorNote';
+import PageHeader from '../components/PageHeader';
+import { useApi } from '../hooks/useApi';
+import { getErrorMessage } from '../lib/errors';
+import type { Card } from '../types';
 
-interface Card {
-  id: number;
-  last_four: string;
-  card_type: string;
-  expiry_date: string;
-  is_active: boolean;
+function formatCardNumber(raw: string) {
+  return raw.replace(/\D/g, '').slice(0, 19).replace(/(.{4})(?=.)/g, '$1 ');
 }
 
-function getMessage(err: any) {
-  return (
-    err.response?.data?.message ||
-    err.response?.data?.error ||
-    'Something went wrong. Please try again.'
-  );
+function formatExpiry(raw: string) {
+  const digits = raw.replace(/\D/g, '').slice(0, 4);
+  return digits.length > 2 ? `${digits.slice(0, 2)}/${digits.slice(2)}` : digits;
 }
 
 function Cards() {
-  const [cards, setCards] = useState<Card[]>([]);
+  const { data, error: loadError, loading, reload } = useApi<{ cards: Card[] }>('/cards');
   const [cardNumber, setCardNumber] = useState('');
   const [cardType, setCardType] = useState('Visa');
   const [expiry, setExpiry] = useState('');
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [toggleError, setToggleError] = useState('');
   const [saving, setSaving] = useState(false);
-  const [refresh, setRefresh] = useState(0);
+  const [toggling, setToggling] = useState(false);
 
-  useEffect(() => {
-    async function fetchCards() {
-      try {
-        const response = await api.get('/cards');
-        setCards(response.data.cards);
-      } catch (err: any) {
-        setError(getMessage(err));
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchCards();
-  }, [refresh]);
+  const cards = data?.cards ?? [];
+  const anyActive = cards.some((c) => c.is_active);
 
   async function handleAddCard(e: React.FormEvent) {
     e.preventDefault();
     setError('');
-
     const digits = cardNumber.replace(/\s/g, '');
-    if (!/^\d{12,19}$/.test(digits)) {
-      setError('Please enter a valid card number.');
+    if (!/^\d{13,19}$/.test(digits)) {
+      setError('Enter the 13 to 19 digits on the front of the card.');
       return;
     }
     if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(expiry)) {
-      setError('Please enter the expiry date as MM/YY, for example 08/28.');
+      setError('Enter the expiry as MM/YY, for example 08/28.');
       return;
     }
-
     setSaving(true);
     try {
-      await api.post('/cards', {
-        card_number: digits,
-        card_type: cardType,
-        expiry_date: expiry,
-      });
+      await api.post('/cards', { card_number: digits, card_type: cardType, expiry_date: expiry });
       setCardNumber('');
       setExpiry('');
-      setRefresh((r) => r + 1);
-    } catch (err: any) {
-      setError(getMessage(err));
+      reload();
+    } catch (err) {
+      setError(getErrorMessage(err));
     } finally {
       setSaving(false);
     }
   }
 
   async function handleToggle() {
-    setError('');
-    const anyActive = cards.some((c) => c.is_active);
+    setToggleError('');
+    setToggling(true);
     try {
       await api.post('/account/active', { is_active: !anyActive });
-      setRefresh((r) => r + 1);
-    } catch (err: any) {
-      setError(getMessage(err));
+      reload();
+    } catch (err) {
+      setToggleError(getErrorMessage(err));
+    } finally {
+      setToggling(false);
     }
   }
 
-  const anyActive = cards.some((c) => c.is_active);
-
   return (
-    <div className="min-h-screen bg-gray-100 px-4 py-8">
-      <div className="max-w-2xl mx-auto">
-        <Link to="/dashboard" className="text-sm text-gray-600 hover:text-black">
-          &larr; Back to Dashboard
-        </Link>
-        <h1 className="text-2xl font-bold mt-4 mb-6">Cards</h1>
+    <>
+      <PageHeader title="Cards" subline={loading ? ' ' : cards.length === 1 ? '1 linked card' : `${cards.length} linked cards`} />
 
-        {error && (
-          <div className="bg-red-100 text-red-700 text-sm p-3 rounded mb-4">{error}</div>
-        )}
-
-        {loading && <p className="text-gray-500">Loading...</p>}
-
-        {!loading && cards.length === 0 && (
-          <div className="bg-white p-6 rounded-lg shadow-md text-center text-gray-500 mb-6">
-            You haven't added a card yet.
+      <div className="max-w-[1152px]">
+        <section className="grid gap-4 border-b border-line pb-8 lg:grid-cols-[minmax(0,360px)_minmax(0,1fr)] lg:gap-8" aria-labelledby="linked-title">
+          <div className="pt-1">
+            <h2 id="linked-title" className="text-[16px] font-medium leading-6">Linked cards</h2>
+            <p className="mt-1 text-muted">Adding and withdrawing money go through your active card. Pause your cards to stop both at once.</p>
           </div>
-        )}
-
-        {cards.length > 0 && (
-          <div className="mb-6">
-            <div className="bg-white rounded-lg shadow-md divide-y mb-3">
-              {cards.map((c) => (
-                <div key={c.id} className="flex justify-between items-center p-4">
+          <div className="rounded-2xl bg-[#f8f9fa] p-4 border border-line">
+            {loadError ? (
+              <ErrorNote message={loadError} onRetry={reload} />
+            ) : loading ? (
+              <span className="skeleton aspect-[1.586] w-full max-w-[280px]" />
+            ) : cards.length === 0 ? (
+              <p className="rounded-md border border-dashed border-control px-3 py-2.5 text-muted">No cards yet. Add one below.</p>
+            ) : (
+              <>
+                <ul className="grid gap-4 sm:grid-cols-2">
+                  {cards.map((c) => (
+                    <li key={c.id}>
+                      <div className="max-w-[280px]"><CardFace card={c} /></div>
+                      <p className="mt-2 text-muted">
+                        {c.card_type} ending {c.last_four} · <span className={c.is_active ? 'text-ink' : ''}>{c.is_active ? 'Active' : 'Paused'}</span>
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-4 flex items-center justify-between gap-4 rounded-md bg-surface px-4 py-3 border border-line">
                   <div>
-                    <p className="font-medium">
-                      {c.card_type} •••• {c.last_four}
-                    </p>
-                    <p className="text-xs text-gray-500">Expires {c.expiry_date}</p>
+                    <p id="cards-switch-label" className="font-medium">Cards on</p>
+                    <p className="text-muted">{anyActive ? 'You can add and withdraw money.' : 'Adding and withdrawing are paused.'}</p>
                   </div>
-                  <span
-                    className={`text-xs font-medium px-2 py-1 rounded ${
-                      c.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'
-                    }`}
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={anyActive}
+                    aria-labelledby="cards-switch-label"
+                    disabled={toggling}
+                    onClick={handleToggle}
+                    className={`relative h-5 w-9 flex-none rounded-full transition-colors duration-200 ${anyActive ? 'bg-positive' : 'bg-control'}`}
                   >
-                    {c.is_active ? 'Active' : 'Inactive'}
-                  </span>
+                    <span
+                      className={`absolute left-0.5 top-0.5 size-4 rounded-full bg-white transition-transform duration-200 ${anyActive ? 'translate-x-4' : ''}`}
+                    />
+                  </button>
                 </div>
-              ))}
-            </div>
-            <button
-              onClick={handleToggle}
-              className="text-sm text-gray-700 underline hover:text-black"
-            >
-              {anyActive ? 'Deactivate my cards' : 'Activate my cards'}
-            </button>
+                {toggleError && <div className="mt-3"><ErrorNote message={toggleError} /></div>}
+              </>
+            )}
           </div>
-        )}
+        </section>
 
-        <form onSubmit={handleAddCard} className="bg-white p-6 rounded-lg shadow-md">
-          <h2 className="text-lg font-bold mb-4">Add a card</h2>
-
-          <label className="block mb-1 text-sm font-medium">Card number</label>
-          <input
-            type="text"
-            inputMode="numeric"
-            maxLength={23}
-            value={cardNumber}
-            onChange={(e) => setCardNumber(e.target.value)}
-            required
-            className="w-full border rounded px-3 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-black"
-          />
-
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <div>
-              <label className="block mb-1 text-sm font-medium">Card type</label>
-              <select
-                value={cardType}
-                onChange={(e) => setCardType(e.target.value)}
-                className="w-full border rounded px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-black"
-              >
-                <option>Visa</option>
-                <option>Mastercard</option>
-              </select>
-            </div>
-            <div>
-              <label className="block mb-1 text-sm font-medium">Expiry (MM/YY)</label>
-              <input
-                type="text"
-                maxLength={5}
-                placeholder="08/28"
-                value={expiry}
-                onChange={(e) => setExpiry(e.target.value)}
-                required
-                className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black"
-              />
-            </div>
+        <section className="grid gap-4 pt-8 lg:grid-cols-[minmax(0,360px)_minmax(0,1fr)] lg:gap-8" aria-labelledby="add-title">
+          <div className="pt-1">
+            <h2 id="add-title" className="text-[16px] font-medium leading-6">Add a card</h2>
+            <p className="mt-1 text-muted">We check the number before saving and keep only its last four digits.</p>
           </div>
-
-          <button
-            type="submit"
-            disabled={saving}
-            className="w-full bg-black text-white py-2 rounded hover:bg-gray-800 disabled:opacity-50 transition"
-          >
-            {saving ? 'Adding...' : 'Add Card'}
-          </button>
-        </form>
+          <form onSubmit={handleAddCard} className="rounded-2xl bg-[#f8f9fa] p-4 border border-line">
+            {error && <div className="mb-4"><ErrorNote message={error} /></div>}
+            <label htmlFor="card-number" className="field-label">Card number</label>
+            <input
+              id="card-number"
+              type="text"
+              inputMode="numeric"
+              autoComplete="cc-number"
+              value={cardNumber}
+              onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
+              required
+              className="input num tracking-[0.04em]"
+            />
+            <div className="mt-4 grid grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="card-type" className="field-label">Network</label>
+                <select id="card-type" value={cardType} onChange={(e) => setCardType(e.target.value)} className="input">
+                  <option>Visa</option>
+                  <option>Mastercard</option>
+                </select>
+              </div>
+              <div>
+                <label htmlFor="expiry" className="field-label">Expiry</label>
+                <input
+                  id="expiry"
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="cc-exp"
+                  placeholder="MM/YY"
+                  aria-describedby="expiry-hint"
+                  value={expiry}
+                  onChange={(e) => setExpiry(formatExpiry(e.target.value))}
+                  required
+                  className="input num"
+                />
+                <p id="expiry-hint" className="sr-only">Month and year, for example 08/28</p>
+              </div>
+            </div>
+            <div className="mt-4 flex justify-end">
+              <button type="submit" disabled={saving} className="btn btn-primary">
+                {saving ? 'Adding…' : 'Add card'}
+              </button>
+            </div>
+          </form>
+        </section>
       </div>
-    </div>
+    </>
   );
 }
 

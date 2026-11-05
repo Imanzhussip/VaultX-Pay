@@ -1,7 +1,7 @@
 require('dotenv').config();
 const cors = require('cors');
 const bcrypt = require('bcrypt');
-const { Client } = require('pg');
+const { Pool } = require('pg');
 const express = require('express');
 const jwt = require('jsonwebtoken');
 
@@ -11,7 +11,7 @@ app.use(cors({
     origin: (process.env.CLIENT_URL || 'http://localhost:5173').split(','),
 }));
 
-const con = new Client(
+const pool = new Pool(
     process.env.DATABASE_URL
         ? {
             connectionString: process.env.DATABASE_URL,
@@ -25,7 +25,9 @@ const con = new Client(
             database: "vaultx",
         }
 );
-con.connect().then(() => console.log("Connection is succesful!"));
+pool.query('SELECT 1')
+    .then(() => console.log("Connection is successful!"))
+    .catch((err) => console.error("Database connection failed:", err.message));
 
 function getFriendlyErrorMessage(err) {
     if (err.code === '23505') { return 'An account with this email already exists.'; }
@@ -60,10 +62,11 @@ function isValidCardNumber(number) {
 }
 
 function isCardExpired(expiry) {
-    const date = new Date(expiry);
-    if (isNaN(date.getTime())) return true;
-    // a card is valid until the end of its expiry month
-    const endOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59);
+    const match = /^(0[1-9]|1[0-2])\/(\d{2})$/.exec(String(expiry));
+    if (!match) return true;
+    const month = Number(match[1]);
+    const year = 2000 + Number(match[2]);
+    const endOfMonth = new Date(year, month, 0, 23, 59, 59);
     return endOfMonth < new Date();
 }
 app.post('/register', async (req, res) => {
@@ -71,14 +74,25 @@ app.post('/register', async (req, res) => {
     if (!name || !email || !password) {
         return res.status(400).json({ message: 'Please fill in all fields.' });
     }
+    if (String(password).length < 8) {
+        return res.status(400).json({ message: 'Your password needs at least 8 characters.' });
+    }
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const insert_query_users = 'INSERT INTO users(name,email,password) VALUES ($1,$2,$3)';
+    const insert_query_users = 'INSERT INTO users(name,email,password) VALUES ($1,$2,$3) RETURNING id';
+    const insert_query_accounts = 'INSERT INTO accounts(user_id) VALUES ($1)';
+    const client = await pool.connect();
     try {
-        await con.query(insert_query_users, [name, email, hashedPassword]);
+        await client.query('BEGIN');
+        const result = await client.query(insert_query_users, [name, email, hashedPassword]);
+        await client.query(insert_query_accounts, [result.rows[0].id]);
+        await client.query('COMMIT');
         res.status(200).json({ message: 'User registered successfully.' });
     } catch (err) {
+        await client.query('ROLLBACK');
         res.status(500).json({ error: getFriendlyErrorMessage(err) });
+    } finally {
+        client.release();
     }
 });
 
@@ -86,14 +100,14 @@ app.post('/login', async (req, res) => {
     const { email, password } = req.body;
     const select_query_users = 'SELECT * FROM users WHERE email=$1';
     try {
-        const result = await con.query(select_query_users, [email]);
+        const result = await pool.query(select_query_users, [email]);
         const user = result.rows[0];
         if (!user) {
-            return res.status(404).json({ message: 'Incorrect email or password.' });
+            return res.status(401).json({ message: 'Incorrect email or password.' });
         }
         const isPasswordMatch = await bcrypt.compare(password, user.password);
         if (!isPasswordMatch) {
-            return res.status(400).json({ message: 'Incorrect email or password.' });
+            return res.status(401).json({ message: 'Incorrect email or password.' });
         }
         const token = jwt.sign({ userId: user.id }, process.env.SECRET_KEY, { expiresIn: "15m" });
         res.status(200).json({ message: 'Login successful.', userId: user.id, token });
@@ -123,11 +137,11 @@ const authenticateToken = async (req, res, next) => {
 app.use(authenticateToken);
 
 async function getAccountForUser(userId) {
-    const result = await con.query('SELECT * FROM accounts WHERE user_id=$1', [userId]);
+    const result = await pool.query('SELECT * FROM accounts WHERE user_id=$1', [userId]);
     return result.rows[0];
 }
 async function hasActiveCard(accountId) {
-    const result = await con.query(
+    const result = await pool.query(
         'SELECT 1 FROM cards WHERE account_id=$1 AND is_active=true LIMIT 1',
         [accountId]
     );
@@ -135,7 +149,9 @@ async function hasActiveCard(accountId) {
 }
 app.get('/account', async (req, res) => {
     try {
-        const account = await getAccountForUser(req.user.userId);
+        const select_query_account = "SELECT a.id, a.balance, a.created_at, u.name, u.email FROM accounts a JOIN users u ON u.id=a.user_id WHERE a.user_id=$1";
+        const result = await pool.query(select_query_account, [req.user.userId]);
+        const account = result.rows[0];
         if (!account) {
             return res.status(404).json({ message: "We couldn't find your account." });
         }
@@ -147,9 +163,9 @@ app.get('/account', async (req, res) => {
 
 app.post('/account/create', async (req, res) => {
     const userId = req.user.userId;
-    const insert_query_accounts = "INSERT INTO accounts(user_id) VALUES($1)";
+    const insert_query_accounts = "INSERT INTO accounts(user_id) VALUES($1) ON CONFLICT (user_id) DO NOTHING";
     try {
-        await con.query(insert_query_accounts, [userId]);
+        await pool.query(insert_query_accounts, [userId]);
         res.status(200).json({ message: "Account created successfully." });
     } catch (err) {
         res.status(500).json({ error: getFriendlyErrorMessage(err) });
@@ -169,25 +185,20 @@ app.post('/account/deposit', async (req, res) => {
     if (!(await hasActiveCard(account.id))) {
         return res.status(400).json({ message: 'Please add an active card before depositing or withdrawing.' });
     }
-    const deposit_query_accounts = "UPDATE accounts SET balance=balance+$1 WHERE user_id=$2 RETURNING id";
+    const deposit_query_accounts = "UPDATE accounts SET balance=balance+$1 WHERE id=$2";
     const insert_query_transactions = "INSERT INTO transactions(account_id,amount,description,type) VALUES($1,$2,$3,$4)";
-    await con.query('BEGIN');
+    const client = await pool.connect();
     try {
-        const check = await con.query(deposit_query_accounts, [amount, userId]);
-        let givenAccount;
-        if (check.rows.length != 0) {
-            givenAccount = check.rows[0].id;
-        }
-        if (!givenAccount) {
-            await con.query('ROLLBACK');
-            return res.status(404).json({ message: "We couldn't find your account." });
-        }
-        await con.query(insert_query_transactions, [givenAccount, amount, "Deposit to account", "deposit"]);
-        await con.query('COMMIT');
+        await client.query('BEGIN');
+        await client.query(deposit_query_accounts, [amount, account.id]);
+        await client.query(insert_query_transactions, [account.id, amount, "Deposit to account", "deposit"]);
+        await client.query('COMMIT');
         res.status(200).json({ message: "Deposit successful." });
     } catch (err) {
-        await con.query('ROLLBACK');
+        await client.query('ROLLBACK');
         res.status(500).json({ error: getFriendlyErrorMessage(err) });
+    } finally {
+        client.release();
     }
 });
 
@@ -204,25 +215,20 @@ app.post('/account/withdraw', async (req, res) => {
     if (!(await hasActiveCard(account.id))) {
         return res.status(400).json({ message: 'Please add an active card before depositing or withdrawing.' });
     }
-    const withdraw_query_accounts = "UPDATE accounts SET balance=balance-$1 WHERE user_id=$2 RETURNING id";
+    const withdraw_query_accounts = "UPDATE accounts SET balance=balance-$1 WHERE id=$2";
     const insert_query_transactions = "INSERT INTO transactions(account_id,amount,description,type) VALUES($1,$2,$3,$4)";
-    await con.query('BEGIN');
+    const client = await pool.connect();
     try {
-        const check = await con.query(withdraw_query_accounts, [amount, userId]);
-        let givenAccount;
-        if (check.rows.length != 0) {
-            givenAccount = check.rows[0].id;
-        }
-        if (!givenAccount) {
-            await con.query('ROLLBACK');
-            return res.status(404).json({ message: "We couldn't find your account." });
-        }
-        await con.query(insert_query_transactions, [givenAccount, -amount, "Withdraw from account", "withdraw"]);
-        await con.query('COMMIT');
+        await client.query('BEGIN');
+        await client.query(withdraw_query_accounts, [amount, account.id]);
+        await client.query(insert_query_transactions, [account.id, -amount, "Withdraw from account", "withdraw"]);
+        await client.query('COMMIT');
         res.status(200).json({ message: "Withdrawal successful." });
     } catch (err) {
-        await con.query('ROLLBACK');
+        await client.query('ROLLBACK');
         res.status(500).json({ error: getFriendlyErrorMessage(err) });
+    } finally {
+        client.release();
     }
 });
 
@@ -237,47 +243,49 @@ app.post('/account/transfer', async (req, res) => {
         return res.status(400).json({ message: 'Please enter who to send money to.' });
     }
     const receiver_query = "SELECT id FROM users WHERE email=$1";
-    const check_query = "SELECT * FROM accounts WHERE user_id=$1";
-    const subtract_query = "UPDATE accounts SET balance=balance-$1 WHERE user_id=$2 RETURNING id";
-    const add_query = "UPDATE accounts SET balance=balance+$1 WHERE user_id=$2 RETURNING id";
-    const insert_query_transactions = "INSERT INTO transactions(account_id,amount,description,type) VALUES($1,$2,$3,$4)";
-    await con.query('BEGIN');
+    const lock_query = "SELECT id, user_id, balance FROM accounts WHERE user_id = ANY($1) ORDER BY id FOR UPDATE";
+    const subtract_query = "UPDATE accounts SET balance=balance-$1 WHERE id=$2";
+    const add_query = "UPDATE accounts SET balance=balance+$1 WHERE id=$2";
+    const insert_query_transactions = "INSERT INTO transactions(account_id,amount,description,type,counterparty_id) VALUES($1,$2,$3,$4,$5)";
+    const client = await pool.connect();
     try {
-        const receiverLookup = await con.query(receiver_query, [receiverEmail]);
+        await client.query('BEGIN');
+        const receiverLookup = await client.query(receiver_query, [receiverEmail]);
         if (receiverLookup.rows.length === 0) {
-            await con.query('ROLLBACK');
+            await client.query('ROLLBACK');
             return res.status(404).json({ message: "We couldn't find anyone with that email." });
         }
         const receiverId = receiverLookup.rows[0].id;
         if (receiverId === senderId) {
-            await con.query('ROLLBACK');
+            await client.query('ROLLBACK');
             return res.status(400).json({ message: "You can't send money to yourself." });
         }
-        const check = await con.query(check_query, [senderId]);
-        const senderAccount = check.rows[0];
+        const locked = await client.query(lock_query, [[senderId, receiverId]]);
+        const senderAccount = locked.rows.find((a) => a.user_id === senderId);
+        const receiverAccount = locked.rows.find((a) => a.user_id === receiverId);
         if (!senderAccount) {
-            await con.query('ROLLBACK');
+            await client.query('ROLLBACK');
             return res.status(404).json({ message: "We couldn't find your account." });
         }
-        if (Number(senderAccount.balance) < amount) {
-            await con.query('ROLLBACK');
-            return res.status(400).json({ message: "You don't have enough balance for this transfer." });
-        }
-        const checkSubtract = await con.query(subtract_query, [amount, senderId]);
-        const givenAccount = checkSubtract.rows[0].id;
-        await con.query(insert_query_transactions, [givenAccount, -amount, 'Transfer to account', 'transfer_out']);
-        const addResult = await con.query(add_query, [amount, receiverId]);
-        if (addResult.rowCount === 0) {
-            await con.query('ROLLBACK');
+        if (!receiverAccount) {
+            await client.query('ROLLBACK');
             return res.status(404).json({ message: "The person you're sending to doesn't have an account yet." });
         }
-        const givenAccount1 = addResult.rows[0].id;
-        await con.query(insert_query_transactions, [givenAccount1, amount, 'Transfer from account', 'transfer_in']);
-        await con.query('COMMIT');
+        if (Number(senderAccount.balance) < amount) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ message: "You don't have enough balance for this transfer." });
+        }
+        await client.query(subtract_query, [amount, senderAccount.id]);
+        await client.query(insert_query_transactions, [senderAccount.id, -amount, 'Transfer to account', 'transfer_out', receiverAccount.id]);
+        await client.query(add_query, [amount, receiverAccount.id]);
+        await client.query(insert_query_transactions, [receiverAccount.id, amount, 'Transfer from account', 'transfer_in', senderAccount.id]);
+        await client.query('COMMIT');
         res.status(200).json({ message: 'Transfer completed successfully.' });
     } catch (err) {
-        await con.query('ROLLBACK');
+        await client.query('ROLLBACK');
         res.status(500).json({ error: getFriendlyErrorMessage(err) });
+    } finally {
+        client.release();
     }
 });
 
@@ -287,8 +295,16 @@ app.get('/transactions', async (req, res) => {
         if (!account) {
             return res.status(404).json({ message: "We couldn't find your account." });
         }
-        const select_query_transactions = "SELECT * FROM transactions WHERE account_id=$1 ORDER BY created_at DESC, id DESC";
-        const result = await con.query(select_query_transactions, [account.id]);
+        const select_query_transactions = `
+            SELECT t.id, t.amount, t.type, t.description, t.created_at,
+                   SUM(t.amount) OVER (ORDER BY t.created_at, t.id) AS balance_after,
+                   u.name AS counterparty_name, u.email AS counterparty_email
+            FROM transactions t
+            LEFT JOIN accounts a ON a.id = t.counterparty_id
+            LEFT JOIN users u ON u.id = a.user_id
+            WHERE t.account_id=$1
+            ORDER BY t.created_at DESC, t.id DESC`;
+        const result = await pool.query(select_query_transactions, [account.id]);
         res.status(200).json({ transactions: result.rows });
     } catch (err) {
         res.status(500).json({ error: getFriendlyErrorMessage(err) });
@@ -302,7 +318,7 @@ app.get('/cards', async (req, res) => {
             return res.status(404).json({ message: "We couldn't find your account." });
         }
         const select_query_cards = "SELECT * FROM cards WHERE account_id=$1 ORDER BY id";
-        const result = await con.query(select_query_cards, [account.id]);
+        const result = await pool.query(select_query_cards, [account.id]);
         res.status(200).json({ cards: result.rows });
     } catch (err) {
         res.status(500).json({ error: getFriendlyErrorMessage(err) });
@@ -324,7 +340,7 @@ app.post('/cards', async (req, res) => {
         }
         const last_four = String(card_number).slice(-4);
         const insert_query_cards = "INSERT INTO cards(account_id,last_four,card_type,expiry_date) VALUES($1,$2,$3,$4)";
-        await con.query(insert_query_cards, [account.id, last_four, card_type, expiry_date]);
+        await pool.query(insert_query_cards, [account.id, last_four, card_type, expiry_date]);
         res.status(200).json({ message: "Card added successfully." });
     } catch (err) {
         res.status(500).json({ error: getFriendlyErrorMessage(err) });
@@ -339,7 +355,7 @@ app.post('/account/active', async (req, res) => {
             return res.status(404).json({ message: "We couldn't find your account." });
         }
         const active_switch_query = "UPDATE cards SET is_active=$1 WHERE account_id=$2";
-        await con.query(active_switch_query, [is_active, account.id]);
+        await pool.query(active_switch_query, [is_active, account.id]);
         res.status(200).json({ message: "Card status updated." });
     } catch (err) {
         res.status(500).json({ error: getFriendlyErrorMessage(err) });

@@ -1,0 +1,182 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-02T18:00:00Z",
+  "title": "Design System: VaultX Pay",
+  "extensions": {
+    "colorMeta": {
+      "primary": { "role": "primary", "displayName": "Committed Cobalt", "canonical": "#2341e0", "aliases": ["--color-primary", "--color-brand", "--color-data", "--chart-1"], "tonalRamp": ["#07004b", "#09007e", "#1628b6", "#2c50e7", "#537dff", "#7ea8ff", "#a8ceff", "#ccedff"] },
+      "brand-hover": { "role": "primary", "displayName": "Pressed Cobalt", "canonical": "#1b32b8", "tonalRamp": ["#060049", "#09047a", "#182db0", "#3759ce", "#5e82e8", "#89abff", "#b2cfff", "#d5eeff"] },
+      "brand-deep": { "role": "primary", "displayName": "Brand Night", "canonical": "#121c6b", "tonalRamp": ["#04003b", "#101866", "#2c3e84", "#4e62a0", "#7487bd", "#9dadd9", "#c4d0f3", "#e4eeff"] },
+      "sky": { "role": "secondary", "displayName": "Pale Sky", "canonical": "#eef1ff", "tonalRamp": ["#04003b", "#121c6b", "#1b32b8", "#2341e0", "#7e98ff", "#aebcff", "#d6dcff", "#eef1ff"] },
+      "ink": { "role": "neutral", "displayName": "Ink", "canonical": "#0b1020", "tonalRamp": ["#060a19", "#202636", "#3f4553", "#616673", "#858994", "#abaeb6", "#cfd1d7", "#edeef2"] },
+      "muted": { "role": "neutral", "displayName": "Slate", "canonical": "#5b6275", "tonalRamp": ["#080b13", "#222632", "#3f4554", "#5f6679", "#82899a", "#a8aebd", "#ccd1de", "#eaeefa"] },
+      "ground": { "role": "neutral", "displayName": "Cool Ground", "canonical": "#f3f5fa", "tonalRamp": ["#0b1020", "#262a36", "#444854", "#656975", "#888c98", "#acb0bb", "#cfd4df", "#f3f5fa"] },
+      "surface": { "role": "neutral", "displayName": "Paper", "canonical": "#ffffff", "tonalRamp": ["#0b0b0b", "#262626", "#454545", "#666666", "#898989", "#aeaeae", "#d1d1d1", "#ffffff"] },
+      "raised": { "role": "neutral", "displayName": "Raised", "canonical": "#eef1f7", "tonalRamp": ["#0b0b0c", "#262627", "#444547", "#656669", "#87898d", "#acaeb2", "#ced1d6", "#eef1f7"] },
+      "active": { "role": "neutral", "displayName": "Active Wash", "canonical": "#e6eaff", "tonalRamp": ["#0b0b0d", "#25262a", "#43454b", "#64656f", "#868895", "#aaadbd", "#ccd0e3", "#e6eaff"] },
+      "line": { "role": "neutral", "displayName": "Line", "canonical": "#e3e6ee", "tonalRamp": ["#0b0b0c", "#262628", "#444548", "#65666a", "#87898e", "#abaeb4", "#ced1d8", "#e3e6ee"] },
+      "rule": { "role": "neutral", "displayName": "Rule", "canonical": "#eef0f5", "tonalRamp": ["#0b0b0c", "#262627", "#444546", "#656668", "#88898c", "#acaeb1", "#cfd1d5", "#eef0f5"] },
+      "control": { "role": "neutral", "displayName": "Control", "canonical": "#cfd4df", "tonalRamp": ["#0a0b0d", "#252629", "#434549", "#63666c", "#868991", "#aaaeb7", "#cfd4df", "#eaeef9"] },
+      "positive": { "role": "status", "displayName": "Positive", "canonical": "#1f7a4d", "tonalRamp": ["#001202", "#003115", "#00542f", "#1e784c", "#539b71", "#82be99", "#addfbf", "#d0fbdf"] },
+      "negative": { "role": "status", "displayName": "Negative", "canonical": "#c4242a", "tonalRamp": ["#2c0000", "#580000", "#88000c", "#ba1e25", "#de5550", "#fe857d", "#ffb0a7", "#ffd3ca"] },
+      "on-cobalt-text": { "role": "neutral", "displayName": "Cobalt Mist", "canonical": "#dfe5ff", "note": "Inline value in Home.tsx; not a @theme token." },
+      "on-deep-text": { "role": "neutral", "displayName": "Night Mist", "canonical": "#d6dcff", "note": "Inline value in Home.tsx and TransferSteps.tsx; not a @theme token." },
+      "on-deep-icon": { "role": "neutral", "displayName": "Night Icon", "canonical": "#aebcff", "note": "Inline value in Home.tsx; not a @theme token." },
+      "paused-card": { "role": "neutral", "displayName": "Paused Slate", "canonical": "#646a7d" },
+      "error-wash": { "role": "status", "displayName": "Error Wash", "canonical": "#ffedea" },
+      "error-ink": { "role": "status", "displayName": "Error Ink", "canonical": "#831c1e" },
+      "success-wash": { "role": "status", "displayName": "Success Wash", "canonical": "#dcfae5" },
+      "success-ink": { "role": "status", "displayName": "Success Ink", "canonical": "#04250e" }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Hero headline only; 44/60/72px by breakpoint; two lines that rise separately." },
+      "display-close": { "displayName": "Display close", "purpose": "Security band and closing band headlines; 40px mobile, 56-60px desktop." },
+      "headline": { "displayName": "Headline", "purpose": "Public section headlines; 36px mobile, 48px from sm." },
+      "figure": { "displayName": "Figure", "purpose": "Split calculator result; phone amount at 36px." },
+      "title": { "displayName": "Title", "purpose": "Public card titles and photo captions (24-26px)." },
+      "lead": { "displayName": "Lead", "purpose": "Paragraph under hero and band headlines (18-19px)." },
+      "body-home": { "displayName": "Body (home)", "purpose": "Public reading text, max 520-640px wide." },
+      "app-title": { "displayName": "App title", "purpose": "Signed-in page headers and auth titles, Geist." },
+      "app-balance": { "displayName": "App balance", "purpose": "Available balance figure on the Account page." },
+      "body": { "displayName": "Body (app)", "purpose": "Signed-in app base size; html default." },
+      "label": { "displayName": "Label", "purpose": "Table headers, captions, timestamps (12-13px), sentence case." },
+      "mono": { "displayName": "Mono", "purpose": "SQL transaction sample on the auth aside only." }
+    },
+    "shadows": [
+      { "name": "lifted-card", "value": "0 24px 48px -16px rgb(11 16 32 / 0.45)", "purpose": "Split calculator lifted over the hero photo." },
+      { "name": "device", "value": "0 32px 64px -24px rgb(11 16 32 / 0.5)", "purpose": "Phone mock bezel." },
+      { "name": "card-in-hand", "value": "0 28px 48px -20px rgb(18 28 107 / 0.6)", "purpose": "Front card of the fanned card pair." }
+    ],
+    "motion": [
+      { "name": "ease-out", "value": "cubic-bezier(0.22, 1, 0.36, 1)", "purpose": "State transitions: buttons, inputs, links, statement row opacity (120-150ms)." },
+      { "name": "ease-entrance", "value": "cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "Entrances: hero lines 800ms (90ms stagger), fade-up 700ms, rise 800ms, photo-in 1600ms, statement rows 600ms (70ms stagger), phone sent state." },
+      { "name": "press", "value": "transform: scale(0.97) over 120ms", "purpose": "Button :active press-in." },
+      { "name": "roll", "value": "quartic ease-out; 1100ms after 450ms delay on arrival, 450ms on change", "purpose": "Split calculator per-person figure rolling from HK$0." },
+      { "name": "scroll-drift", "value": "animation-timeline: view() / scroll(root), linear", "purpose": "Photo pan (3.5-5%), story clip-path unmask, card fan; only under @supports (animation-timeline: view())." },
+      { "name": "demo-loop", "value": "IntersectionObserver threshold 0.4, max 3 runs, Pause/Play control", "purpose": "Phone mock and transfer steps; settle on final frame when stopped." },
+      { "name": "reduced-motion", "value": "keyframes only under prefers-reduced-motion: no-preference; transition-duration 0ms under reduce", "purpose": "Settled state for all motion; loops show final frame; rolling number jumps; no smooth scroll." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "xl", "value": "1280px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "App primary action: cobalt, 6px corners, 36px tall.",
+      "html": "<button class=\"ds-btn-primary\">Send money</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 36px; padding: 0 14px; border: none; border-radius: 6px; background: var(--color-primary, #2341e0); color: #ffffff; font-family: Geist, Inter, system-ui, sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; transition: transform 120ms cubic-bezier(0.22, 1, 0.36, 1), background-color 150ms cubic-bezier(0.22, 1, 0.36, 1); } .ds-btn-primary:hover { background: var(--color-brand-hover, #1b32b8); } .ds-btn-primary:active { transform: scale(0.97); } .ds-btn-primary:focus-visible { outline: 2px solid #0b1020; outline-offset: 2px; }"
+    },
+    {
+      "name": "Large Pill Button",
+      "kind": "button",
+      "refersTo": "button-pill-lg",
+      "description": "Public call to action on white or sky grounds: cobalt pill, 52px.",
+      "html": "<button class=\"ds-btn-pill\">Open an account</button>",
+      "css": ".ds-btn-pill { display: inline-flex; align-items: center; justify-content: center; height: 52px; padding: 0 24px; border: none; border-radius: 999px; background: var(--color-primary, #2341e0); color: #ffffff; font-family: Geist, Inter, system-ui, sans-serif; font-size: 16px; font-weight: 500; cursor: pointer; transition: transform 120ms cubic-bezier(0.22, 1, 0.36, 1), background-color 150ms cubic-bezier(0.22, 1, 0.36, 1); } .ds-btn-pill:hover { background: var(--color-brand-hover, #1b32b8); } .ds-btn-pill:active { transform: scale(0.97); } .ds-btn-pill:focus-visible { outline: 2px solid #0b1020; outline-offset: 2px; }"
+    },
+    {
+      "name": "On-Cobalt Button Pair",
+      "kind": "button",
+      "refersTo": "button-on-brand",
+      "description": "Hero and closing band actions: white pill plus inset-ring outline pill on cobalt.",
+      "html": "<div class=\"ds-onbrand\"><button class=\"ds-btn-white\">Open an account</button><button class=\"ds-btn-ring\">Log in</button></div>",
+      "css": ".ds-onbrand { display: flex; gap: 12px; padding: 24px; background: var(--color-brand, #2341e0); } .ds-btn-white, .ds-btn-ring { height: 52px; padding: 0 24px; border: none; border-radius: 999px; font-family: Geist, Inter, system-ui, sans-serif; font-size: 16px; font-weight: 500; cursor: pointer; transition: transform 120ms cubic-bezier(0.22, 1, 0.36, 1), background-color 150ms cubic-bezier(0.22, 1, 0.36, 1); } .ds-btn-white { background: #ffffff; color: var(--color-brand, #2341e0); } .ds-btn-white:hover { background: var(--color-sky, #eef1ff); } .ds-btn-ring { background: transparent; color: #ffffff; box-shadow: inset 0 0 0 1.5px rgb(255 255 255 / 0.7); } .ds-btn-ring:hover { background: rgb(255 255 255 / 0.1); } .ds-btn-white:active, .ds-btn-ring:active { transform: scale(0.97); } .ds-btn-white:focus-visible, .ds-btn-ring:focus-visible { outline: 2px solid #ffffff; outline-offset: 2px; }"
+    },
+    {
+      "name": "Text Field with HK$ Prefix",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "40px field, control border, ink focus; currency prefix inside.",
+      "html": "<label class=\"ds-field\"><span class=\"ds-field-label\">Amount</span><span class=\"ds-field-wrap\"><span class=\"ds-field-prefix\">HK$</span><input class=\"ds-input\" inputmode=\"decimal\" placeholder=\"0.00\"></span></label>",
+      "css": ".ds-field { display: block; font-family: Geist, Inter, system-ui, sans-serif; font-size: 14px; color: #0b1020; } .ds-field-label { display: block; margin-bottom: 8px; font-weight: 500; } .ds-field-wrap { position: relative; display: block; } .ds-field-prefix { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #5b6275; pointer-events: none; } .ds-input { width: 100%; height: 40px; padding: 0 12px 0 48px; background: #ffffff; border: 1px solid var(--color-control, #cfd4df); border-radius: 6px; font: inherit; font-variant-numeric: tabular-nums; transition: border-color 150ms cubic-bezier(0.22, 1, 0.36, 1); } .ds-input:hover { border-color: #b8b8b8; } .ds-input:focus-visible { outline: 2px solid #0b1020; outline-offset: 0; border-color: #0b1020; }"
+    },
+    {
+      "name": "Public Header",
+      "kind": "nav",
+      "refersTo": "nav-public",
+      "description": "Sticky 72px white bank header: wordmark, pill anchor links, Log in and Open an account.",
+      "html": "<header class=\"ds-header\"><a class=\"ds-wordmark\" href=\"#\"><svg width=\"22\" height=\"22\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"11\" fill=\"#2341e0\"/><circle cx=\"12\" cy=\"12\" r=\"5\" fill=\"none\" stroke=\"#fff\" stroke-width=\"1.8\"/><path d=\"M12 3.5v3.5M12 17v3.5M3.5 12H7M17 12h3.5\" stroke=\"#fff\" stroke-width=\"1.8\" stroke-linecap=\"round\"/></svg>VaultX Pay</a><nav class=\"ds-links\"><a href=\"#\">Send money</a><a href=\"#\">Cards</a><a href=\"#\">Statement</a><a href=\"#\">Security</a><a href=\"#\">Help</a></nav><div class=\"ds-actions\"><a class=\"ds-ghost\" href=\"#\">Log in</a><a class=\"ds-cta\" href=\"#\">Open an account</a></div></header>",
+      "css": ".ds-header { display: flex; align-items: center; justify-content: space-between; gap: 24px; height: 72px; padding: 0 32px; background: #ffffff; border-bottom: 1px solid #e3e6ee; font-family: Geist, Inter, system-ui, sans-serif; font-size: 15px; color: #0b1020; } .ds-wordmark { display: flex; align-items: center; gap: 10px; font-family: 'Bricolage Grotesque', Geist, system-ui, sans-serif; font-weight: 700; font-size: 17px; letter-spacing: -0.01em; color: #0b1020; text-decoration: none; } .ds-links { display: flex; gap: 4px; } .ds-links a, .ds-ghost { padding: 8px 14px; border-radius: 999px; color: #0b1020; text-decoration: none; transition: background-color 150ms, color 150ms; } .ds-links a:hover { background: #eef1ff; color: #2341e0; } .ds-ghost:hover { background: #eef1ff; } .ds-actions { display: flex; gap: 4px; align-items: center; } .ds-cta { display: inline-flex; align-items: center; height: 44px; padding: 0 20px; border-radius: 999px; background: #2341e0; color: #ffffff; font-weight: 500; text-decoration: none; } .ds-cta:hover { background: #1b32b8; } .ds-header a:focus-visible { outline: 2px solid #0b1020; outline-offset: 2px; }"
+    },
+    {
+      "name": "App Sidebar Nav",
+      "kind": "nav",
+      "refersTo": "nav-item-active",
+      "description": "Signed-in navigation rows with stroke icons; active wash for the current page.",
+      "html": "<ul class=\"ds-side\"><li><a class=\"is-active\" href=\"#\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 10.5 12 4l9 6.5M5 9.5V20h14V9.5M9.5 20v-5.5h5V20\"/></svg>Account</a></li><li><a href=\"#\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 6h16M4 12h16M4 18h10\"/></svg>Activity</a></li><li><a href=\"#\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 12h13M13 6l6 6-6 6\"/></svg>Send money</a></li></ul>",
+      "css": ".ds-side { list-style: none; margin: 0; padding: 12px; width: 232px; display: flex; flex-direction: column; gap: 2px; background: #f3f5fa; font-family: Geist, Inter, system-ui, sans-serif; font-size: 14px; } .ds-side a { display: flex; align-items: center; gap: 10px; height: 32px; padding: 0 12px; border-radius: 6px; color: #5b6275; text-decoration: none; transition: background-color 150ms, color 150ms; } .ds-side a:hover { background: #eef1f7; color: #0b1020; } .ds-side a.is-active { background: #e6eaff; color: #0b1020; } .ds-side a:focus-visible { outline: 2px solid #0b1020; outline-offset: 2px; }"
+    },
+    {
+      "name": "Person Chip",
+      "kind": "chip",
+      "refersTo": "chip-person",
+      "description": "Paid-before recipient chips; selected is solid ink.",
+      "html": "<div class=\"ds-chips\"><button class=\"ds-chip\" aria-pressed=\"true\">Wong Tsz Hin</button><button class=\"ds-chip\" aria-pressed=\"false\">Priya Nair</button></div>",
+      "css": ".ds-chips { display: flex; gap: 8px; flex-wrap: wrap; } .ds-chip { height: 32px; padding: 0 12px; border-radius: 6px; border: 1px solid #cfd4df; background: #ffffff; color: #0b1020; font-family: Geist, Inter, system-ui, sans-serif; font-size: 13px; cursor: pointer; transition: border-color 150ms, background-color 150ms, color 150ms; } .ds-chip:hover { border-color: #0b1020; } .ds-chip[aria-pressed=\"true\"] { background: #0b1020; border-color: #0b1020; color: #ffffff; } .ds-chip:focus-visible { outline: 2px solid #0b1020; outline-offset: 2px; }"
+    },
+    {
+      "name": "Statement Ledger",
+      "kind": "card",
+      "refersTo": "panel",
+      "description": "Bordered panel with four-column ledger: green incoming, ink outgoing, muted balance after.",
+      "html": "<div class=\"ds-ledger\"><div class=\"ds-ledger-head\"><span>Activity</span><span>Leung Ka Yan</span></div><table><thead><tr><th>Date</th><th>Movement</th><th class=\"r\">Amount</th><th class=\"r\">Balance after</th></tr></thead><tbody><tr><td class=\"m\">1 Nov</td><td><b>From Priya Nair</b><small>Transfer</small></td><td class=\"r in\">+HK$12.75</td><td class=\"r m\">HK$1,320.25</td></tr><tr><td class=\"m\">31 Oct</td><td><b>To Wong Tsz Hin</b><small>Transfer</small></td><td class=\"r\">−HK$250.00</td><td class=\"r m\">HK$1,307.50</td></tr></tbody></table></div>",
+      "css": ".ds-ledger { width: 560px; background: #ffffff; border: 1px solid #e3e6ee; border-radius: 20px; overflow: hidden; font-family: Geist, Inter, system-ui, sans-serif; font-size: 15px; line-height: 24px; color: #0b1020; } .ds-ledger-head { display: flex; justify-content: space-between; align-items: baseline; padding: 20px 24px 12px; } .ds-ledger-head span:first-child { font-family: 'Bricolage Grotesque', Geist, sans-serif; font-weight: 700; font-size: 20px; } .ds-ledger-head span:last-child { font-size: 14px; color: #5b6275; } .ds-ledger table { width: 100%; border-collapse: collapse; } .ds-ledger th { height: 36px; text-align: left; font-size: 13px; font-weight: 400; color: #5b6275; padding: 0 12px; } .ds-ledger td { height: 60px; padding: 0 12px; border-top: 1px solid #eef0f5; font-variant-numeric: tabular-nums; } .ds-ledger td b { display: block; font-weight: 500; } .ds-ledger td small { display: block; font-size: 13px; line-height: 20px; color: #5b6275; } .ds-ledger .r { text-align: right; } .ds-ledger .m { color: #5b6275; } .ds-ledger .in { color: #1f7a4d; font-weight: 500; } .ds-ledger tbody tr { transition: background-color 150ms; } .ds-ledger tbody tr:hover { background: #fafbfc; }"
+    },
+    {
+      "name": "Split Calculator",
+      "kind": "custom",
+      "refersTo": "split-result",
+      "description": "Signature lifted card: bill total, people stepper, sky result tile with cobalt rolling figure.",
+      "html": "<section class=\"ds-split\"><h3>Split a bill</h3><p class=\"sub\">See what everyone owes before anyone pays.</p><div class=\"row\"><input class=\"total\" value=\"486\" aria-label=\"Bill total\"><div class=\"step\"><button aria-label=\"Fewer people\">−</button><output>4</output><button aria-label=\"More people\">+</button></div></div><div class=\"res\"><p>Each friend sends you</p><p class=\"fig\">HK$121.50</p><p>You collect <b>HK$364.50</b> from 3 friends.</p></div><button class=\"cta\">Open an account to collect it</button></section>",
+      "css": ".ds-split { width: 380px; padding: 28px; background: #ffffff; border-radius: 20px; box-shadow: 0 24px 48px -16px rgb(11 16 32 / 0.45); font-family: Geist, Inter, system-ui, sans-serif; color: #0b1020; } .ds-split h3 { margin: 0; font-family: 'Bricolage Grotesque', Geist, sans-serif; font-size: 24px; line-height: 32px; font-weight: 700; letter-spacing: -0.01em; } .ds-split .sub { margin: 4px 0 0; font-size: 15px; line-height: 24px; color: #5b6275; } .ds-split .row { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 16px; margin-top: 20px; } .ds-split .total { height: 48px; padding: 0 12px; border: 1px solid #cfd4df; border-radius: 6px; font: inherit; font-size: 17px; font-variant-numeric: tabular-nums; } .ds-split .total:focus-visible { outline: 2px solid #0b1020; outline-offset: 0; border-color: #0b1020; } .ds-split .step { display: flex; align-items: center; height: 48px; border: 1px solid #cfd4df; border-radius: 6px; } .ds-split .step button { width: 44px; height: 100%; border: none; background: transparent; font-size: 18px; cursor: pointer; transition: background-color 150ms, scale 150ms; } .ds-split .step button:hover { background: #eef1ff; } .ds-split .step button:active { scale: 0.9; } .ds-split output { width: 32px; text-align: center; font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; } .ds-split .res { margin-top: 20px; padding: 16px 20px; background: #eef1ff; border-radius: 16px; } .ds-split .res p { margin: 0; font-size: 14px; line-height: 20px; color: #5b6275; } .ds-split .res b { color: #0b1020; font-weight: 600; } .ds-split .fig { font-family: 'Bricolage Grotesque', Geist, sans-serif; font-size: 40px !important; line-height: 48px !important; font-weight: 700; letter-spacing: -0.02em; color: #2341e0 !important; font-variant-numeric: tabular-nums; } .ds-split .cta { width: 100%; height: 52px; margin-top: 20px; border: none; border-radius: 999px; background: #2341e0; color: #ffffff; font: inherit; font-size: 16px; font-weight: 500; cursor: pointer; transition: background-color 150ms, transform 120ms; } .ds-split .cta:hover { background: #1b32b8; } .ds-split .cta:active { transform: scale(0.97); } .ds-split .cta:focus-visible { outline: 2px solid #0b1020; outline-offset: 2px; }"
+    },
+    {
+      "name": "Card Face",
+      "kind": "card",
+      "refersTo": "card-face",
+      "description": "1.586-ratio cobalt payment card with mark, network, masked last four and expiry.",
+      "html": "<div class=\"ds-cardface\"><div class=\"top\"><span><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"11\" fill=\"#fff\"/><circle cx=\"12\" cy=\"12\" r=\"5\" fill=\"none\" stroke=\"#2341e0\" stroke-width=\"1.8\"/><path d=\"M12 3.5v3.5M12 17v3.5M3.5 12H7M17 12h3.5\" stroke=\"#2341e0\" stroke-width=\"1.8\" stroke-linecap=\"round\"/></svg>VaultX</span><span>Visa</span></div><div class=\"bot\"><span class=\"pan\">•••• 4242</span><span class=\"exp\">08/29</span></div></div>",
+      "css": ".ds-cardface { display: flex; flex-direction: column; justify-content: space-between; width: 320px; aspect-ratio: 1.586; padding: 20px; box-sizing: border-box; border-radius: 10px; background: #2341e0; color: #ffffff; font-family: Geist, Inter, system-ui, sans-serif; transition: background-color 200ms; } .ds-cardface .top, .ds-cardface .bot { display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: 500; } .ds-cardface .top span:first-child { display: flex; align-items: center; gap: 8px; } .ds-cardface .bot { align-items: flex-end; } .ds-cardface .pan { font-size: 18px; letter-spacing: 0.08em; font-variant-numeric: tabular-nums; } .ds-cardface .exp { font-size: 12px; font-weight: 400; color: rgb(255 255 255 / 0.8); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Cobalt High Street",
+    "overview": "VaultX Pay is a retail bank played straight: a white bank header, a full-bleed committed-cobalt hero, then white and pale-sky sections, a brand-night security band and an ink footer. The world is owned by one idea, paying friends back, and every surface proves itself with the product's own machinery (a working split calculator, a phone drawn from the real send screen, a statement whose rows carry the balance after them) rather than with claims. Real Hong Kong photography (tram, dim sum, Star Ferry, Mong Kok, harbour at night) carries the place; everything product-shaped is drawn in HTML.\n\nTwo densities share one palette. The public home runs at 17px body on a 1280px container with 80 to 128px section rhythm, Bricolage Grotesque display and generous pills. The signed-in app runs at 14px body on a pale cool ground with 8px bordered panels, Geist-only headings and 6px controls: the same bank, behind the counter. Depth is earned by objects that sit on top of something (the split card on the hero photo, the phone, the front card of a fan); everything else is flat and separated by hairlines.\n\nMotion is narrative and always settles. Headlines rise line by line once the display font has loaded, photos drift on scroll, statement rows arrive in order, the phone types a transfer and the security steps light in sequence. Loops play only while on screen, stop after three runs, carry a visible Pause control, and under reduced motion show their final, informative frame.",
+    "keyCharacteristics": [
+      "Committed cobalt (#2341e0) owns the hero, primary actions, the mark and the active card face.",
+      "White and pale sky alternate below the hero; brand-night (#121c6b) is reserved for proof and the close.",
+      "Bricolage Grotesque bold for public display; Geist for all reading text and for every app heading.",
+      "Tabular figures on every amount; money is always shown as HK$1,320.25.",
+      "20px radii on photos and feature cards; pills for public actions; 6 to 8px in the app.",
+      "Flat hairline structure; soft, cool, negative-spread shadows only under lifted objects."
+    ],
+    "rules": [
+      { "name": "The One Cobalt Rule", "body": "There is one accent. Every interactive emphasis is cobalt or ink; no second hue enters the chrome. Green and red appear only on amounts and status.", "section": "colors" },
+      { "name": "The Night Is For Proof Rule", "body": "Brand Night grounds the security explanation and the close, never an offer section or the app.", "section": "colors" },
+      { "name": "The Two Rooms Rule", "body": "Bricolage speaks only on the public site (and in the wordmark). Inside the app, headings are Geist bold; the display face never appears on a form or ledger.", "section": "typography" },
+      { "name": "The Tabular Money Rule", "body": "Every amount, date, time and count uses tabular figures, and every currency value reads HK$1,320.25 with a true minus sign for outgoing money.", "section": "typography" },
+      { "name": "The Only-What-Sits-On-Top Rule", "body": "Panels, inputs, buttons and app surfaces carry no drop shadow. A drop shadow is allowed only when an object overlaps a photo or another object.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do let committed cobalt (#2341e0) fill the first band of a public page and drive every primary action.",
+      "Do show money as HK$1,320.25 in tabular figures, green only for incoming, with the balance after wherever a movement is listed.",
+      "Do prove features with the product's own UI drawn in HTML (forms, statements, card faces), not screenshots or invented figures.",
+      "Do use real Hong Kong photography at 20px radius, credited in the footer.",
+      "Do keep app surfaces flat: 1px line borders, 8px panels, 20px padding, 12px gaps.",
+      "Do give every looping demo a Pause control, an in-view gate, a run limit and a settled final frame."
+    ],
+    "donts": [
+      "Don't introduce a second accent hue; status green and red never style chrome.",
+      "Don't use Bricolage Grotesque inside the signed-in app beyond the wordmark.",
+      "Don't put drop shadows on panels, buttons or inputs; reserve them for objects lifted over a photo or another object (the inset ring of the outline pill is a border, not elevation).",
+      "Don't colour outgoing amounts red; red means a problem, not spending.",
+      "Don't add customer counts, ratings, testimonials, licences or rates as proof."
+    ]
+  }
+}

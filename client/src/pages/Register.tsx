@@ -1,7 +1,10 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import api from '../api/axios';
+import AuthLayout from '../components/AuthLayout';
+import ErrorNote from '../components/ErrorNote';
 import { useAuth } from '../context/AuthContext';
+import { getErrorMessage } from '../lib/errors';
 
 function Register() {
   const [name, setName] = useState('');
@@ -19,78 +22,49 @@ function Register() {
     try {
       await api.post('/register', { name, email, password });
       const loginResponse = await api.post('/login', { email, password });
-      const { token } = loginResponse.data;
-      login(token);
-      await api.post('/account/create');
+      login(loginResponse.data.token);
       navigate('/dashboard');
-    } catch (err: any) {
-      const message =
-        err.response?.data?.message ||
-        err.response?.data?.error ||
-        'Something went wrong. Please try again.';
-      setError(message);
+    } catch (err) {
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
   }
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white p-8 rounded-lg shadow-md w-full max-w-sm"
-      >
-        <h1 className="text-2xl font-bold mb-1 text-center">VaultX Pay</h1>
-        <p className="text-gray-500 text-sm text-center mb-6">Create your account</p>
-
-        {error && (
-          <div className="bg-red-100 text-red-700 text-sm p-2 rounded mb-4">
-            {error}
-          </div>
-        )}
-
-        <label className="block mb-1 text-sm font-medium">Name</label>
+    <AuthLayout
+      title="Create your account"
+      subline="Open a VaultX balance, link a card and send money by email."
+      footer={
+        <>
+          Already have an account? <Link to="/login" className="link text-ink">Log in</Link>
+        </>
+      }
+    >
+      <form onSubmit={handleSubmit}>
+        {error && <div className="mb-4"><ErrorNote message={error} /></div>}
+        <label htmlFor="name" className="field-label">Full name</label>
+        <input id="name" type="text" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} required className="input" />
+        <label htmlFor="email" className="field-label mt-4">Email</label>
+        <input id="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="input" />
+        <label htmlFor="password" className="field-label mt-4">Password</label>
         <input
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          required
-          className="w-full border rounded px-3 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-black"
-        />
-
-        <label className="block mb-1 text-sm font-medium">Email</label>
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          className="w-full border rounded px-3 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-black"
-        />
-
-        <label className="block mb-1 text-sm font-medium">Password</label>
-        <input
+          id="password"
           type="password"
+          autoComplete="new-password"
+          minLength={8}
+          aria-describedby="password-rule"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
-          className="w-full border rounded px-3 py-2 mb-6 focus:outline-none focus:ring-2 focus:ring-black"
+          className="input"
         />
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-black text-white py-2 rounded hover:bg-gray-800 disabled:opacity-50 transition"
-        >
-          {loading ? 'Creating account...' : 'Create Account'}
+        <p id="password-rule" className="mt-2 text-[12px] leading-4 text-muted">At least 8 characters.</p>
+        <button type="submit" disabled={loading} className="btn btn-primary mt-6 w-full">
+          {loading ? 'Creating account…' : 'Create account'}
         </button>
-
-        <p className="text-sm text-gray-500 text-center mt-4">
-          Already have an account?{' '}
-          <Link to="/login" className="text-black font-medium underline">
-            Log in
-          </Link>
-        </p>
       </form>
-    </div>
+    </AuthLayout>
   );
 }
 

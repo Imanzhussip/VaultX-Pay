@@ -5,6 +5,10 @@ import App from './App.tsx'
 import { AuthProvider } from './context/AuthContext.tsx'
 import './index.css'
 
+document.fonts.load('700 72px "Bricolage Grotesque"').finally(() => {
+  document.documentElement.classList.add('fonts-ready')
+})
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>

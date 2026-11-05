@@ -1,107 +1,157 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api/axios';
+import BalancePreview from '../components/BalancePreview';
+import ErrorNote from '../components/ErrorNote';
+import Icon from '../components/Icon';
+import Ledger, { LedgerSkeleton } from '../components/Ledger';
+import PageHeader from '../components/PageHeader';
+import { useApi } from '../hooks/useApi';
+import { getErrorMessage } from '../lib/errors';
+import { formatMoney } from '../lib/format';
+import type { Account, Card, Transaction } from '../types';
 
 type Mode = 'deposit' | 'withdraw';
 
+const modes: { id: Mode; label: string }[] = [
+  { id: 'deposit', label: 'Add money' },
+  { id: 'withdraw', label: 'Withdraw' },
+];
+
 function DepositWithdraw() {
+  const account = useApi<{ account: Account }>('/account');
+  const cards = useApi<{ cards: Card[] }>('/cards');
+  const history = useApi<{ transactions: Transaction[] }>('/transactions');
   const [mode, setMode] = useState<Mode>('deposit');
   const [amount, setAmount] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const balance = account.data ? Number(account.data.account.balance) : null;
+  const value = Number(amount) > 0 ? Math.round(Number(amount) * 100) / 100 : 0;
+  const card = cards.data?.cards.find((c) => c.is_active);
+  const noCard = !cards.loading && !cards.error && !card;
+  const tooMuch = mode === 'withdraw' && balance !== null && value > balance;
+  const cardMovements = (history.data?.transactions ?? []).filter((t) => t.type === 'deposit' || t.type === 'withdraw').slice(0, 5);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
     setSuccess('');
     setLoading(true);
-
     try {
-      // the route is /account/deposit or /account/withdraw depending on the toggle
-      const response = await api.post(`/account/${mode}`, {
-        amount: Number(amount),
-      });
-      setSuccess(response.data.message);
+      await api.post(`/account/${mode}`, { amount: value });
+      setSuccess(mode === 'deposit' ? `Added ${formatMoney(value)} from your card.` : `Withdrew ${formatMoney(value)} to your card.`);
       setAmount('');
-    } catch (err: any) {
-      const message =
-        err.response?.data?.message ||
-        err.response?.data?.error ||
-        'Something went wrong. Please try again.';
-      setError(message);
+      account.reload();
+      history.reload();
+    } catch (err) {
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
   }
 
-  function switchMode(newMode: Mode) {
-    setMode(newMode);
+  function switchMode(next: Mode) {
+    setMode(next);
     setError('');
     setSuccess('');
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 px-4 py-8">
-      <div className="max-w-md mx-auto">
-        <Link to="/dashboard" className="text-sm text-gray-600 hover:text-black">
-          &larr; Back to Dashboard
-        </Link>
+    <>
+      <PageHeader title="Add or withdraw" subline="Move money between your linked card and your VaultX balance." />
 
-        <div className="bg-white p-6 rounded-lg shadow-md mt-4">
-          <div className="flex mb-6 border rounded overflow-hidden">
-            <button
-              type="button"
-              onClick={() => switchMode('deposit')}
-              className={`flex-1 py-2 text-sm font-medium ${
-                mode === 'deposit' ? 'bg-black text-white' : 'bg-white text-gray-600'
-              }`}
-            >
-              Deposit
-            </button>
-            <button
-              type="button"
-              onClick={() => switchMode('withdraw')}
-              className={`flex-1 py-2 text-sm font-medium ${
-                mode === 'withdraw' ? 'bg-black text-white' : 'bg-white text-gray-600'
-              }`}
-            >
-              Withdraw
-            </button>
-          </div>
+      <div className="grid gap-3">
+        <form onSubmit={handleSubmit} className="panel grid md:grid-cols-2" aria-label={mode === 'deposit' ? 'Add money' : 'Withdraw'}>
+          <div className="p-5">
+            <h2 className="sr-only">Direction and amount</h2>
+            <div role="radiogroup" aria-label="Direction" className="inline-flex rounded-md bg-raised p-1">
+              {modes.map((m) => (
+                <button
+                  key={m.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={mode === m.id}
+                  onClick={() => switchMode(m.id)}
+                  className={`h-8 rounded-[5px] px-4 transition-colors duration-150 ${
+                    mode === m.id ? 'bg-surface font-medium text-ink' : 'text-muted hover:text-ink'
+                  }`}
+                >
+                  {m.label}
+                </button>
+              ))}
+            </div>
 
-          <form onSubmit={handleSubmit}>
-            {error && (
-              <div className="bg-red-100 text-red-700 text-sm p-2 rounded mb-4">{error}</div>
-            )}
             {success && (
-              <div className="bg-green-100 text-green-700 text-sm p-2 rounded mb-4">
-                {success}
+              <div role="status" className="mt-4 flex items-start gap-2 rounded-md bg-[#dcfae5] px-3 py-2.5 text-[#04250e]">
+                <Icon name="check" />
+                <span>{success}</span>
               </div>
             )}
+            {error && <div className="mt-4"><ErrorNote message={error} /></div>}
 
-            <label className="block mb-1 text-sm font-medium">Amount ($)</label>
-            <input
-              type="number"
-              step="0.01"
-              min="0.01"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              required
-              className="w-full border rounded px-3 py-2 mb-6 focus:outline-none focus:ring-2 focus:ring-black"
-            />
+            <label htmlFor="amount" className="field-label mt-5">Amount</label>
+            <div className="relative">
+              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted">HK$</span>
+              <input
+                id="amount"
+                type="number"
+                inputMode="decimal"
+                step="0.01"
+                min="0.01"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                required
+                disabled={noCard}
+                className="input num pl-12"
+              />
+            </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-black text-white py-2 rounded hover:bg-gray-800 disabled:opacity-50 transition"
-            >
-              {loading ? 'Processing...' : mode === 'deposit' ? 'Add Money' : 'Withdraw Money'}
+            <p className="mt-4 text-muted">
+              {cards.loading ? (
+                <span className="skeleton h-3.5 w-40 align-middle" />
+              ) : card ? (
+                <>
+                  {mode === 'deposit' ? 'From' : 'To'} <span className="font-medium text-ink">{card.card_type} •••• {card.last_four}</span>
+                </>
+              ) : noCard ? (
+                <>
+                  You need an active card first. <Link to="/cards" className="link text-ink">Add or turn on a card</Link>
+                </>
+              ) : null}
+            </p>
+          </div>
+
+          <div className="flex flex-col border-t border-line p-5 md:border-l md:border-t-0">
+            <h2 className="text-[16px] font-medium leading-6">Your balance</h2>
+            <div className="mt-4">
+              <BalancePreview balance={balance} change={mode === 'deposit' ? value : -value} changeLabel={mode === 'deposit' ? 'Adding' : 'Withdrawing'} />
+            </div>
+            <button type="submit" disabled={loading || noCard || tooMuch} className="btn btn-primary mt-auto w-full">
+              {loading ? 'Processing…' : `${mode === 'deposit' ? 'Add' : 'Withdraw'}${value > 0 ? ' ' + formatMoney(value) : ' money'}`}
             </button>
-          </form>
-        </div>
+          </div>
+        </form>
+
+        <section className="panel overflow-hidden" aria-labelledby="card-moves-title">
+          <div className="flex items-baseline justify-between px-5 pb-2 pt-5">
+            <h2 id="card-moves-title" className="text-[16px] font-medium leading-6">Recent card movements</h2>
+            <Link to="/transactions" className="link">All activity</Link>
+          </div>
+          {history.error ? (
+            <div className="px-5 pb-5"><ErrorNote message={history.error} onRetry={history.reload} /></div>
+          ) : history.loading ? (
+            <LedgerSkeleton rows={3} />
+          ) : cardMovements.length === 0 ? (
+            <p className="mx-5 mb-5 rounded-md border border-dashed border-control px-3 py-2.5 text-muted">Nothing added or withdrawn yet.</p>
+          ) : (
+            <Ledger transactions={cardMovements} />
+          )}
+        </section>
       </div>
-    </div>
+    </>
   );
 }
 

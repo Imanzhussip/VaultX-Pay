@@ -1,14 +1,16 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import api from '../api/axios';
+import AuthLayout from '../components/AuthLayout';
+import ErrorNote from '../components/ErrorNote';
 import { useAuth } from '../context/AuthContext';
+import { getErrorMessage } from '../lib/errors';
 
 function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-
   const navigate = useNavigate();
   const { login } = useAuth();
 
@@ -18,64 +20,44 @@ function Login() {
     setLoading(true);
     try {
       const response = await api.post('/login', { email, password });
-      const { token } = response.data;
-      login(token);
+      login(response.data.token);
       navigate('/dashboard');
-    } catch (err: any) {
-      const message =
-        err.response?.data?.message ||
-        err.response?.data?.error ||
-        'Something went wrong. Please try again.';
-      setError(message);
+    } catch (err) {
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
   }
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white p-8 rounded-lg shadow-md w-full max-w-sm"
-      >
-        <h1 className="text-2xl font-bold mb-1 text-center">VaultX Pay</h1>
-        <p className="text-gray-500 text-sm text-center mb-6">Welcome back</p>
 
-        {error && (
-          <div className="bg-red-100 text-red-700 text-sm p-2 rounded mb-4">
-            {error}
-          </div>
-        )}
-        <label className="block mb-1 text-sm font-medium">Email</label>
+  return (
+    <AuthLayout
+      title="Log in"
+      subline="Your balance, transfers and cards in one place."
+      footer={
+        <>
+          New to VaultX Pay? <Link to="/register" className="link text-ink">Create an account</Link>
+        </>
+      }
+    >
+      <form onSubmit={handleSubmit}>
+        {error && <div className="mb-4"><ErrorNote message={error} /></div>}
+        <label htmlFor="email" className="field-label">Email</label>
+        <input id="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="input" />
+        <label htmlFor="password" className="field-label mt-4">Password</label>
         <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          className="w-full border rounded px-3 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-black"
-        />
-        <label className="block mb-1 text-sm font-medium">Password</label>
-        <input
+          id="password"
           type="password"
+          autoComplete="current-password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
-          className="w-full border rounded px-3 py-2 mb-6 focus:outline-none focus:ring-2 focus:ring-black"
+          className="input"
         />
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-black text-white py-2 rounded hover:bg-gray-800 disabled:opacity-50 transition"
-        >
-          {loading ? 'Logging in...' : 'Log In'}
+        <button type="submit" disabled={loading} className="btn btn-primary mt-6 w-full">
+          {loading ? 'Logging in…' : 'Log in'}
         </button>
-        <p className="text-sm text-gray-500 text-center mt-4">
-          Don't have an account?{' '}
-          <Link to="/register" className="text-black font-medium underline">
-            Register
-          </Link>
-        </p>
       </form>
-    </div>
+    </AuthLayout>
   );
 }
 

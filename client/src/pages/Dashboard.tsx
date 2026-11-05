@@ -1,104 +1,119 @@
-import { useEffect, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import api from '../api/axios';
-import { useAuth } from '../context/AuthContext';
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import BalanceExplorer from '../components/BalanceExplorer';
+import CardFace from '../components/CardFace';
+import ErrorNote from '../components/ErrorNote';
+import Ledger, { LedgerSkeleton } from '../components/Ledger';
+import PageHeader from '../components/PageHeader';
+import PeriodSummary from '../components/PeriodSummary';
+import { useApi } from '../hooks/useApi';
+import { formatDate, formatMoney, formatTime } from '../lib/format';
+import { startOfDaysAgo } from '../lib/ledger';
+import type { Account, Card, Transaction } from '../types';
 
-interface Account {
-  id: number;
-  user_id: number;
-  balance: string;
-  created_at: string;
-}
-
-const actions = [
-  { to: '/funds', title: 'Deposit / Withdraw', text: 'Add or take out money' },
-  { to: '/transfer', title: 'Send Money', text: 'Pay someone by email' },
-  { to: '/transactions', title: 'History', text: 'See all your activity' },
-  { to: '/cards', title: 'Cards', text: 'Manage your linked cards' },
-];
+const NO_TRANSACTIONS: Transaction[] = [];
 
 function Dashboard() {
-  const [account, setAccount] = useState<Account | null>(null);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
-  const { logout } = useAuth();
+  const account = useApi<{ account: Account }>('/account');
+  const history = useApi<{ transactions: Transaction[] }>('/transactions');
+  const cards = useApi<{ cards: Card[] }>('/cards');
+  const [since] = useState(() => startOfDaysAgo(29));
 
-  useEffect(() => {
-    async function fetchAccount() {
-      try {
-        const response = await api.get('/account');
-        setAccount(response.data.account);
-      } catch (err: any) {
-        setError(
-          err.response?.data?.message ||
-            err.response?.data?.error ||
-            'Could not load your account.'
-        );
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchAccount();
-  }, []);
-
-  function handleLogout() {
-    logout();
-    navigate('/login');
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100 text-gray-500">
-        Loading...
-      </div>
-    );
-  }
+  const balance = account.data ? Number(account.data.account.balance) : null;
+  const transactions = history.data?.transactions ?? NO_TRANSACTIONS;
+  const latest = transactions[0];
+  const card = cards.data?.cards.find((c) => c.is_active) ?? cards.data?.cards[0];
 
   return (
-    <div className="min-h-screen bg-gray-100 px-4 py-6 sm:py-10">
-      <div className="max-w-2xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-xl sm:text-2xl font-bold">VaultX Pay</h1>
-          <button
-            onClick={handleLogout}
-            className="text-sm text-gray-600 hover:text-black"
-          >
-            Log out
-          </button>
-        </div>
+    <>
+      <PageHeader
+        title="Account"
+        subline={latest ? `Last movement ${formatDate(latest.created_at)}, ${formatTime(latest.created_at)}` : 'No movements yet'}
+        actions={
+          <>
+            <Link to="/funds" className="btn btn-secondary">Add money</Link>
+            <Link to="/transfer" className="btn btn-primary">Send money</Link>
+          </>
+        }
+      />
 
-        {error && (
-          <div className="bg-red-100 text-red-700 text-sm p-3 rounded mb-4">{error}</div>
-        )}
-
-        {account && (
-          <div className="bg-black text-white p-6 rounded-xl shadow-md mb-6">
-            <p className="text-sm text-gray-300">Current Balance</p>
-            <p className="text-3xl sm:text-4xl font-bold mt-1">
-              $
-              {Number(account.balance).toLocaleString('en-US', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })}
+      <div className="grid gap-3 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        <section className="panel p-5" aria-labelledby="balance-title">
+          <h2 id="balance-title" className="text-muted">Available balance</h2>
+          {account.error ? (
+            <div className="mt-3"><ErrorNote message={account.error} onRetry={account.reload} /></div>
+          ) : (
+            <p className="num mt-1 text-[32px] font-bold leading-10 tracking-[-0.02em]">
+              {balance === null ? <span className="skeleton h-8 w-48 align-middle" /> : formatMoney(balance)}
             </p>
-          </div>
-        )}
+          )}
+          {history.error ? (
+            <div className="mt-4"><ErrorNote message={history.error} onRetry={history.reload} /></div>
+          ) : history.loading ? (
+            <div className="mt-2 min-h-[320px]"><span className="skeleton h-3.5 w-52" /></div>
+          ) : (
+            <BalanceExplorer transactions={transactions} />
+          )}
+        </section>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {actions.map((a) => (
-            <Link
-              key={a.to}
-              to={a.to}
-              className="bg-white p-5 rounded-xl shadow-sm hover:shadow-md transition"
-            >
-              <p className="font-semibold">{a.title}</p>
-              <p className="text-sm text-gray-500 mt-1">{a.text}</p>
-            </Link>
-          ))}
-        </div>
+        <section className="panel order-last flex flex-col p-5 xl:order-none" aria-labelledby="card-title">
+          <div className="flex items-baseline justify-between">
+            <h2 id="card-title" className="text-[16px] font-medium leading-6">Linked card</h2>
+            <Link to="/cards" className="link">Manage</Link>
+          </div>
+          <div className="mt-4 flex flex-1 flex-col">
+            {cards.error ? (
+              <ErrorNote message={cards.error} onRetry={cards.reload} />
+            ) : cards.loading ? (
+              <span className="skeleton aspect-[1.586] w-full max-w-[320px]" />
+            ) : card ? (
+              <>
+                <CardFace card={card} />
+                <dl className="mt-auto pt-4">
+                  <div className="flex h-8 items-center justify-between">
+                    <dt className="text-muted">Status</dt>
+                    <dd className={card.is_active ? '' : 'text-muted'}>{card.is_active ? 'Active' : 'Paused'}</dd>
+                  </div>
+                  <div className="flex h-8 items-center justify-between">
+                    <dt className="text-muted">Used for</dt>
+                    <dd>Adding and withdrawing</dd>
+                  </div>
+                </dl>
+              </>
+            ) : (
+              <div className="flex flex-1 flex-col justify-center rounded-md border border-dashed border-control p-4">
+                <p>Link a card to add or withdraw money.</p>
+                <Link to="/cards" className="link mt-2 self-start">Add a card</Link>
+              </div>
+            )}
+          </div>
+        </section>
+
+        <section className="panel overflow-hidden" aria-labelledby="recent-title">
+          <div className="flex items-baseline justify-between px-5 pb-2 pt-5">
+            <h2 id="recent-title" className="text-[16px] font-medium leading-6">Recent activity</h2>
+            {transactions.length > 0 && (
+              <Link to="/transactions" className="link">View all {transactions.length}</Link>
+            )}
+          </div>
+          {history.loading ? (
+            <LedgerSkeleton />
+          ) : transactions.length === 0 ? (
+            <p className="mx-5 mb-5 rounded-md border border-dashed border-control px-3 py-2.5 text-muted">
+              No movements yet. Add money from your card to start.
+            </p>
+          ) : (
+            <Ledger transactions={transactions.slice(0, 5)} />
+          )}
+        </section>
+
+        {history.loading ? (
+          <div className="panel p-5"><span className="skeleton h-4 w-32" /></div>
+        ) : (
+          <PeriodSummary transactions={transactions} since={since} title="Last 30 days" />
+        )}
       </div>
-    </div>
+    </>
   );
 }
 
