@@ -4,13 +4,30 @@ const bcrypt = require('bcrypt');
 const { Pool } = require('pg');
 const express = require('express');
 const jwt = require('jsonwebtoken');
+const rateLimit=require('express-rate-limit');
 
 const app = express();
 app.use(express.json());
 app.use(cors({
     origin: (process.env.CLIENT_URL || 'http://localhost:5173').split(','),
 }));
-
+const loginLimiter = rateLimit({
+	windowMs: 15 * 60 * 1000,
+	limit: 10,
+	standardHeaders: 'draft-8',
+	legacyHeaders: false,
+	ipv6Subnet: 56,
+	skipSuccessfulRequests:true,
+    message: { message: "Too many failed attempts. Please try again later." },
+})
+const registerLimiter = rateLimit({
+	windowMs: 60 * 60 * 1000,
+	limit: 10,
+	standardHeaders: 'draft-8',
+	legacyHeaders: false,
+	ipv6Subnet: 56,
+    message: { message: "Please try again later." },
+})
 const pool = new Pool(
     process.env.DATABASE_URL
         ? {
@@ -35,13 +52,13 @@ function getFriendlyErrorMessage(err) {
     if (err.code === '22003') { return 'That amount is too large.'; }
     return 'Something went wrong. Please try again.';
 }
-
 function parseAmount(value) {
-    const amount = Number(value);
-    if (!Number.isFinite(amount) || amount <= 0) {
+    if (!Number.isFinite(value) || value < 0.01 || value>999999.99 ) {
         return null;
     }
-    return amount;
+    const decimals=String(value).split('.')[1];
+    if (decimals && decimals.length > 2) { return null; }
+    return value;
 }
 function isValidCardNumber(number) {
     const digits = String(number).replace(/[\s-]/g, '');
@@ -69,7 +86,7 @@ function isCardExpired(expiry) {
     const endOfMonth = new Date(year, month, 0, 23, 59, 59);
     return endOfMonth < new Date();
 }
-app.post('/register', async (req, res) => {
+app.post('/register',registerLimiter, async (req, res) => {
     const { name, email, password } = req.body;
     if (!name || !email || !password) {
         return res.status(400).json({ message: 'Please fill in all fields.' });
@@ -96,7 +113,7 @@ app.post('/register', async (req, res) => {
     }
 });
 
-app.post('/login', async (req, res) => {
+app.post('/login',loginLimiter, async (req, res) => {
     const { email, password } = req.body;
     const select_query_users = 'SELECT * FROM users WHERE email=$1';
     try {
@@ -176,7 +193,7 @@ app.post('/account/deposit', async (req, res) => {
     const amount = parseAmount(req.body.amount);
     const userId = req.user.userId;
     if (amount === null) {
-        return res.status(400).json({ message: 'Please enter an amount greater than zero.' });
+        return res.status(400).json({ message: 'Please enter a valid amount between HK$0.01 and HK$999,999.99.' });
     }
     const account = await getAccountForUser(userId);
     if (!account) {
@@ -206,7 +223,7 @@ app.post('/account/withdraw', async (req, res) => {
     const amount = parseAmount(req.body.amount);
     const userId = req.user.userId;
     if (amount === null) {
-        return res.status(400).json({ message: 'Please enter an amount greater than zero.' });
+        return res.status(400).json({ message: 'Please enter a valid amount between HK$0.01 and HK$999,999.99.' });
     }
     const account = await getAccountForUser(userId);
     if (!account) {
@@ -237,7 +254,7 @@ app.post('/account/transfer', async (req, res) => {
     const { receiverEmail } = req.body;
     const senderId = req.user.userId;
     if (amount === null) {
-        return res.status(400).json({ message: 'Please enter an amount greater than zero.' });
+        return res.status(400).json({ message: 'Please enter a valid amount between HK$0.01 and HK$999,999.99.' });
     }
     if (!receiverEmail) {
         return res.status(400).json({ message: 'Please enter who to send money to.' });
@@ -333,6 +350,9 @@ app.post('/cards', async (req, res) => {
     if (isCardExpired(expiry_date)) {
         return res.status(400).json({ message: 'This card has expired.' });
     }
+    if (!['Visa', 'Mastercard'].includes(card_type)) {
+        return res.status(400).json({ message: 'Please choose Visa or Mastercard.' });
+    }
     try {
         const account = await getAccountForUser(req.user.userId);
         if (!account) {
@@ -349,6 +369,9 @@ app.post('/cards', async (req, res) => {
 
 app.post('/account/active', async (req, res) => {
     const { is_active } = req.body;
+    if (typeof is_active !== 'boolean') {
+        return res.status(400).json({ message: 'Card status must be on or off.' });
+    }
     try {
         const account = await getAccountForUser(req.user.userId);
         if (!account) {
