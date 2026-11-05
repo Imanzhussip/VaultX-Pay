@@ -7,8 +7,7 @@ const jwt = require('jsonwebtoken');
 const rateLimit=require('express-rate-limit');
 
 const app = express();
-app.set('trust proxy', 1);
-app.get('/__ip', (req, res) => res.json({ ip: req.ip, ips: req.ips, xff: req.headers['x-forwarded-for'] }));
+app.set('trust proxy', 3);
 app.use(express.json());
 app.use(cors({
     origin: (process.env.CLIENT_URL || 'http://localhost:5173').split(','),
